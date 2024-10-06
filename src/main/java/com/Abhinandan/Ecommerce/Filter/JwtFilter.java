@@ -15,14 +15,13 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
 
-//    @Autowired
+    @Autowired
     private JwtUtility jwtUtility;
 
     @Autowired
@@ -30,27 +29,49 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-       try{
+        String requestURI = request.getRequestURI();
+
+        if (requestURI.equals("/user/register") || requestURI.equals("/user/login")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        try{
            final String jwtToken = getTokenFromRequest(request);
-
+           System.out.println(jwtToken);
            String userEmail = jwtUtility.getUsernameFromToken(jwtToken);
+           System.out.println(userEmail);
 
-           Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+           UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
 
-           if (userEmail != null && authentication != null) {
-               UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
+           if (StringUtils.hasText(userEmail) && jwtUtility.validateToken(jwtToken, userDetails)){
 
-               if (jwtUtility.validateToken(jwtToken, userDetails)) {
-                   UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+               UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                       userDetails, null, userDetails.getAuthorities()
+               );
+               authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                   authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                   SecurityContextHolder.getContext().setAuthentication(authToken);
-               }
+               SecurityContextHolder.getContext().setAuthentication(authenticationToken);
            }
+        filterChain.doFilter(request, response);
 
-           filterChain.doFilter(request, response);
+//
+//           Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//
+//
+//           if (userEmail != null && authentication != null) {
+//               UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
+//
+//               if (jwtUtility.validateToken(jwtToken, userDetails)) {
+//                   UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+//
+//                   authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+//                   SecurityContextHolder.getContext().setAuthentication(authToken);
+//               }
+//           }
+
+//           filterChain.doFilter(request, response);
        }catch (Exception e){
-          e.printStackTrace();
+           System.out.println("Error in try catch of Do filter");
        }
     }
 

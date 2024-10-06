@@ -43,10 +43,10 @@ public class WebSecurityConfig{
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception{
-        httpSecurity.csrf(AbstractHttpConfigurer::disable)
+        httpSecurity.csrf(Customizer -> Customizer.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/user/**", "/category/**", "/product/**", "/order/**").permitAll()
+                        .requestMatchers("/user/login", "/user/register").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(manager-> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

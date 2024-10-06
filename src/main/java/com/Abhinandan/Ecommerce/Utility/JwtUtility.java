@@ -23,6 +23,7 @@ public class JwtUtility {
     @Value("${jwt.expirationTime}")
     private Long JwtExpirationTime;
 
+
     public String getUsernameFromToken(String token) {
         return getClaimFromToken(token, Claims::getSubject);
     }
@@ -70,6 +71,7 @@ public class JwtUtility {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
 
 
 }
